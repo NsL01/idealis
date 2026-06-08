@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_move_form_inherit_collaborative" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.collaborative</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@id='invoice_tab']" position="after">
+                <page string="Collaborators" name="collaborators">
+                    <field name="collaborator_ids"/>
+                </page>
+            </xpath>
+            <xpath expr="//div[hasclass('o_attachment_preview')]" position="attributes">
+                <attribute name="invisible">move_type not in ('out_invoice', 'out_refund', 'in_invoice', 'in_refund') or state not in ('draft', 'posted')</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

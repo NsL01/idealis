@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+    <!-- Inherit and extend mail.AttachmentView to show our widget -->
+    <t t-name="idealis_account.AttachmentView" t-inherit="mail.AttachmentView" t-inherit-mode="extension" xml:space="preserve">
+        <xpath expr="//div[hasclass('o-mail-Attachment')]" position="before">
+            <t t-if="isCollaborativeInvoice">
+                <CollaborativeInvoiceWidget 
+                    threadId="props.threadId" 
+                    threadModel="props.threadModel"
+                    record="props.record"
+                />
+            </t>
+        </xpath>
+    </t>
+
+    <!-- Standalone CollaborativeInvoiceWidget template -->
+    <t t-name="idealis_account.CollaborativeInvoiceWidget">
+        <div class="o_collaborative_sidebar_widget p-3 border-bottom bg-white shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-dark fs-6"><i class="fa fa-users me-2 text-primary"></i>Collaborative Split</span>
+                <span class="badge bg-light text-muted small border">
+                    Total: <t t-esc="formatCurrency(state.invoiceTotal)"/>
+                </span>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1 small text-muted" style="font-size: 11px;">
+                    <span>Paid: <t t-esc="formatCurrency(totalPaid)"/></span>
+                    <span>Remaining: <t t-esc="formatCurrency(state.invoiceTotal - totalPaid)"/></span>
+                </div>
+                <div class="progress rounded-pill" style="height: 10px; background-color: #f0f2f5; overflow: hidden;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated rounded-pill bg-success" 
+                         role="progressbar" 
+                         t-attf-style="width: {{progressPercentage}}%;"
+                         t-att-aria-valuenow="progressPercentage" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+
+            <div t-if="!isSplitComplete" class="alert alert-warning py-2 px-3 mb-3 small d-flex align-items-center border border-warning-light bg-warning-light-alpha" style="font-size: 11px; margin-bottom: 12px;">
+                <i class="fa fa-exclamation-triangle me-2 text-warning"></i>
+                <span>
+                    <t t-if="splitDifference &gt; 0">
+                        Remaining split: <strong><t t-esc="formatCurrency(splitDifference)"/></strong>
+                    </t>
+                    <t t-else="">
+                        Over-assigned: <strong><t t-esc="formatCurrency(-splitDifference)"/></strong>
+                    </t>
+                </span>
+            </div>
+
+            <div class="o_collaborators_sidebar_list mb-3 overflow-auto" style="max-height: 250px;">
+                <t t-foreach="state.collaborators" t-as="col" t-key="col.id">
+                    <div class="d-flex align-items-center justify-content-between p-2 mb-2 rounded bg-light border border-light position-relative">
+                        <div class="d-flex align-items-center flex-grow-1 min-w-0">
+                            <div class="avatar-circle-sm me-2 bg-primary-light text-primary d-flex align-items-center justify-content-center fw-bold small">
+                                <t t-if="col.contributor_id" t-esc="col.contributor_id[1].substring(0,2).toUpperCase()"/>
+                                <t t-else="">?</t>
+                            </div>
+                            <div class="min-w-0 flex-grow-1">
+                                <div class="fw-bold text-dark text-truncate small" t-esc="col.contributor_id ? col.contributor_id[1] : 'Unknown Contributor'"/>
+                                <div class="d-flex align-items-center gap-1 my-1">
+                                    <div class="input-group input-group-sm" style="width: 100px; height: 26px;">
+                                        <input type="number" 
+                                               class="form-control text-end text-xxs py-0" 
+                                               t-att-value="col.amount" 
+                                               t-on-change="(ev) => this.onCollaboratorAmountChange(col.id, ev)"
+                                               step="0.01" 
+                                               min="0"
+                                               style="height: 26px; font-size: 10px; padding: 2px 4px;"/>
+                                        <span class="input-group-text bg-white text-xxs px-1.5 py-0" style="font-size: 9px; height: 26px;"><t t-esc="state.currencySymbol || '€'"/></span>
+                                    </div>
+                                    <div class="input-group input-group-sm" style="width: 80px; height: 26px;">
+                                        <input type="number" 
+                                               class="form-control text-end text-xxs py-0" 
+                                               t-att-value="formatNumber(col.percentage * 100)" 
+                                               t-on-change="(ev) => this.onCollaboratorPercentageChange(col.id, ev)"
+                                               step="0.01" 
+                                               min="0" 
+                                               max="100"
+                                               style="height: 26px; font-size: 10px; padding: 2px 4px;"/>
+                                        <span class="input-group-text bg-white text-xxs px-1.5 py-0" style="font-size: 9px; height: 26px;">%</span>
+                                    </div>
+                                </div>
+                                <div class="text-xxs text-muted" style="font-size: 10px;">
+                                    Paid: <span class="text-success fw-bold"><t t-esc="formatCurrency(col.amount_paid)"/></span> | 
+                                    Rem: <span class="text-danger fw-bold"><t t-esc="formatCurrency(col.amount_remaining)"/></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <t t-if="col.status === 'paid'">
+                                <span class="badge bg-success-light text-success text-xxs border border-success px-1.5 py-0.5 rounded-pill" title="Paid" style="font-size: 9px;">
+                                    <i class="fa fa-check-circle"></i>
+                                </span>
+                            </t>
+                            <t t-elif="col.status === 'partial'">
+                                <span class="badge bg-warning-light text-warning text-xxs border border-warning px-1.5 py-0.5 rounded-pill" title="Partially Paid" style="font-size: 9px;">
+                                    <i class="fa fa-adjust"></i>
+                                </span>
+                            </t>
+                            <t t-else="">
+                                <span class="badge bg-secondary-light text-secondary text-xxs border border-secondary px-1.5 py-0.5 rounded-pill" title="Unpaid" style="font-size: 9px;">
+                                    <i class="fa fa-circle-o"></i>
+                                </span>
+                            </t>
+
+                            <t t-if="col.status !== 'paid'">
+                                <button class="btn btn-sm btn-link text-primary p-0 border-0 fs-6" 
+                                        t-on-click="() => this.sendReminder(col.id)"
+                                        title="Send Reminder">
+                                    <i class="fa fa-envelope-o"></i>
+                                </button>
+                            </t>
+
+                            <button class="btn btn-sm btn-link text-danger p-0 border-0 fs-6" 
+                                    t-on-click="() => this.removeContributor(col.id)"
+                                    title="Remove Contributor">
+                                <i class="fa fa-trash-o"></i>
+                            </button>
+                        </div>
+                    </div>
+                </t>
+                
+                <t t-if="state.collaborators.length == 0">
+                    <div class="text-center py-3 text-muted small border border-dashed rounded" style="background-color: rgba(248, 249, 250, 0.5);">
+                        <i class="fa fa-users d-block mb-1 text-muted opacity-50" style="font-size: 18px;"></i>
+                        No contributors assigned yet.
+                    </div>
+                </t>
+            </div>
+
+            <div class="o_add_contributor_sidebar_form p-2 rounded bg-light border">
+                <span class="d-block mb-2 text-dark fw-bold small" style="font-size: 11px;"><i class="fa fa-user-plus me-1 text-primary"></i>Add Contributor Share</span>
+                
+                <div class="d-flex align-items-center gap-1">
+                    <div class="position-relative min-w-0" style="flex: 1 1 0%;">
+                        <t t-if="state.selectedPartner">
+                            <div class="selected-partner-badge-sm d-flex align-items-center justify-content-between p-1 border rounded bg-white small" style="font-size: 11px; height: 30px;">
+                                <span class="text-dark text-truncate"><i class="fa fa-user me-1 text-primary"></i><t t-esc="state.selectedPartner.name"/></span>
+                                <button class="btn btn-sm btn-link text-danger p-0 m-0 border-0" t-on-click="clearPartnerSelection">
+                                    <i class="fa fa-times-circle"></i>
+                                </button>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <div class="input-group input-group-sm" style="height: 30px;">
+                                <span class="input-group-text bg-white border-end-0 py-0 px-2"><i class="fa fa-search text-muted" style="font-size: 10px;"></i></span>
+                                <input type="text" 
+                                       class="form-control border-start-0 text-xs py-0" 
+                                       placeholder="Search name..."
+                                       t-on-input="onPartnerInput"
+                                       t-att-value="state.searchQuery"
+                                       style="font-size: 11px; height: 30px;"/>
+                            </div>
+                            
+                            <t t-if="state.showResults">
+                                <ul class="dropdown-menu show w-100 shadow position-absolute border-0 mt-1 py-0" style="max-height: 150px; overflow-y: auto; z-index: 1060; font-size: 11px;">
+                                    <t t-foreach="state.searchResults" t-as="partner" t-key="partner.id">
+                                        <li>
+                                            <a class="dropdown-item py-1.5 text-truncate" href="#" t-on-click.prevent="() => this.selectPartner(partner)">
+                                                <i class="fa fa-user me-1 text-muted"></i>
+                                                <t t-esc="partner.display_name"/>
+                                            </a>
+                                        </li>
+                                    </t>
+                                </ul>
+                            </t>
+                        </t>
+                    </div>
+
+                    <div style="flex: 1 1 0%;">
+                        <div class="input-group input-group-sm" style="height: 30px;">
+                            <input type="number" 
+                                   class="form-control text-end text-xs px-1.5 py-0" 
+                                   placeholder="Amt"
+                                   t-on-input="onAmountInput"
+                                   t-att-value="state.amount" 
+                                   step="0.01" 
+                                   min="0"
+                                   style="font-size: 11px; height: 30px;"/>
+                            <span class="input-group-text bg-white text-xxs px-1 py-0" style="font-size: 9px; height: 30px;"><t t-esc="state.currencySymbol || '€'"/></span>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1 1 0%;">
+                        <div class="input-group input-group-sm" style="height: 30px;">
+                            <input type="number" 
+                                   class="form-control text-end text-xs px-1.5 py-0" 
+                                   placeholder="%"
+                                   t-on-input="onPercentageInput"
+                                   t-att-value="state.percentage" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="100"
+                                   style="font-size: 11px; height: 30px;"/>
+                            <span class="input-group-text bg-white text-xxs px-1 py-0" style="font-size: 9px; height: 30px;">%</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm btn-primary py-0 px-2 d-flex align-items-center justify-content-center" style="font-size: 11px; height: 30px; flex-shrink: 0;" t-on-click="addContributor" title="Add Contributor">
+                        <i class="fa fa-plus-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

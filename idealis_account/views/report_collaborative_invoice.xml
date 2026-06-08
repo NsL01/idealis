@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Register the new PDF Report -->
+    <record id="action_report_collaborative_invoice" model="ir.actions.report">
+        <field name="name">Collaborative Invoice</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">idealis_account.report_collaborative_invoice</field>
+        <field name="report_file">idealis_account.report_collaborative_invoice</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Report Wrapper template -->
+    <template id="report_collaborative_invoice">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="lang" t-value="o.partner_id.lang"/>
+                <t t-set="print_with_payments" t-value="True"/>
+                <t t-call="idealis_account.report_collaborative_invoice_document" t-lang="lang"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- Document template inheriting standard invoice layout -->
+    <template id="report_collaborative_invoice_document" inherit_id="account.report_invoice_document" primary="True">
+        <xpath expr="//div[hasclass('page')]" position="inside">
+            <t t-if="o.collaborator_ids">
+                <div class="mt-4" style="page-break-inside: avoid; border-top: 2px solid #dee2e6; padding-top: 15px;">
+                    <h5 class="fw-bold" style="color: #333333; margin-bottom: 12px;">Collaborative Split Details</h5>
+                    <table class="table table-sm table-striped" style="font-size: 11px;">
+                        <thead>
+                            <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 8px;">Contributor</th>
+                                <th class="text-end" style="padding: 8px;">Amount</th>
+                                <th class="text-end" style="padding: 8px;">Percentage</th>
+                                <th class="text-end" style="padding: 8px;">Amount Paid</th>
+                                <th class="text-end" style="padding: 8px;">Amount Remaining</th>
+                                <th style="padding: 8px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="o.collaborator_ids" t-as="col">
+                                <tr>
+                                    <td style="padding: 6px 8px;"><strong><span t-field="col.contributor_id.name"/></strong></td>
+                                    <td class="text-end" style="padding: 6px 8px;"><span t-field="col.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                                    <td class="text-end" style="padding: 6px 8px;"><span t-field="col.percentage" t-options='{"widget": "percentage"}'/></td>
+                                    <td class="text-end text-success" style="padding: 6px 8px;"><span t-field="col.amount_paid" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                                    <td class="text-end text-danger" style="padding: 6px 8px;"><span t-field="col.amount_remaining" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
+                                    <td style="padding: 6px 8px;">
+                                        <t t-if="col.status == 'paid'">
+                                            <span class="badge text-bg-success" style="padding: 3px 6px; font-size: 9px; border-radius: 10px;">Paid</span>
+                                        </t>
+                                        <t t-elif="col.status == 'partial'">
+                                            <span class="badge text-bg-warning" style="padding: 3px 6px; font-size: 9px; border-radius: 10px;">Partially Paid</span>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="badge text-bg-secondary" style="padding: 3px 6px; font-size: 9px; border-radius: 10px;">Unpaid</span>
+                                        </t>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Portal page layout modification (left side) -->
+    <template id="portal_invoice_page_inherit" inherit_id="account.portal_invoice_page">
+        <xpath expr="//div[hasclass('o_portal_html_view')]" position="after">
+            <t t-if="invoice.collaborator_ids">
+                <div class="card mt-4 shadow-sm border-0 overflow-hidden bg-white">
+                    <div class="card-header bg-primary text-white py-2 d-flex align-items-center justify-content-between">
+                        <h5 class="mb-0 text-white">Collaborative Split Details</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle mb-0" style="font-size: 13px;">
+                                <thead class="bg-light text-muted">
+                                    <tr>
+                                        <th class="ps-3 py-3 text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">Contributor</th>
+                                        <th class="text-end py-3 text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">Amount</th>
+                                        <th class="text-end py-3 text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">Percentage</th>
+                                        <th class="text-end py-3 text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">Amount Paid</th>
+                                        <th class="text-end py-3 text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">Amount Remaining</th>
+                                        <th class="pe-3 py-3 text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="invoice.collaborator_ids" t-as="col">
+                                        <td class="ps-3 py-3">
+                                            <span t-field="col.contributor_id.name" class="fw-semibold text-dark"/>
+                                        </td>
+                                        <td class="text-end py-3 font-weight-bold text-dark">
+                                            <span t-field="col.amount" t-options='{"widget": "monetary", "display_currency": invoice.currency_id}'/>
+                                        </td>
+                                        <td class="text-end py-3 text-muted">
+                                            <span t-field="col.percentage" t-options='{"widget": "percentage"}'/>
+                                        </td>
+                                        <td class="text-end py-3 text-success font-weight-semibold">
+                                            <span t-field="col.amount_paid" t-options='{"widget": "monetary", "display_currency": invoice.currency_id}'/>
+                                        </td>
+                                        <td class="text-end py-3 text-danger font-weight-semibold">
+                                            <span t-field="col.amount_remaining" t-options='{"widget": "monetary", "display_currency": invoice.currency_id}'/>
+                                        </td>
+                                        <td class="pe-3 py-3">
+                                            <span t-if="col.status == 'paid'" class="badge rounded-pill text-bg-success px-2.5 py-1" style="font-size: 11px; font-weight: 500;">Paid</span>
+                                            <span t-elif="col.status == 'partial'" class="badge rounded-pill text-bg-warning px-2.5 py-1" style="font-size: 11px; font-weight: 500;">Partially Paid</span>
+                                            <span t-else="" class="badge rounded-pill text-bg-secondary px-2.5 py-1" style="font-size: 11px; font-weight: 500;">Unpaid</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

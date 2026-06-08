@@ -1,0 +1,121 @@
+// Flexbox layout for the Odoo attachment preview column to stack our widget and the PDF viewer
+.o_attachment_preview {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100%;
+
+    > .o-mail-Attachment {
+        flex: 1 1 auto;
+        height: 0 !important;
+    }
+}
+
+// Sidebar collaborative invoicing widget styling
+.o_collaborative_sidebar_widget {
+    flex-shrink: 0;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e9ecef;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+
+    .fs-6 {
+        font-size: 14px !important;
+    }
+
+    .avatar-circle-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-size: 11px;
+    }
+
+    .text-xxs {
+        font-size: 10px !important;
+    }
+
+    .text-xs {
+        font-size: 11px !important;
+    }
+
+    .bg-primary-light {
+        background-color: #eff6ff !important;
+    }
+
+    .bg-success-light {
+        background-color: #ecfdf5 !important;
+    }
+    .bg-warning-light {
+        background-color: #fffbeb !important;
+    }
+    .bg-warning-light-alpha {
+        background-color: rgba(254, 243, 199, 0.4) !important;
+    }
+    .border-warning-light {
+        border-color: #fde68a !important;
+    }
+    .bg-secondary-light {
+        background-color: #f3f4f6 !important;
+    }
+
+    .border-success {
+        border-color: #10b981 !important;
+    }
+    .border-warning {
+        border-color: #f59e0b !important;
+    }
+    .border-secondary {
+        border-color: #9ca3af !important;
+    }
+
+    .text-success {
+        color: #059669 !important;
+    }
+    .text-warning {
+        color: #d97706 !important;
+    }
+    .text-secondary {
+        color: #4b5563 !important;
+    }
+
+    .progress-bar-striped {
+        background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
+        background-size: 1rem 1rem;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, #10b981, #059669) !important;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .selected-partner-badge-sm {
+        background-color: #eff6ff !important;
+        border-color: #bfdbfe !important;
+        height: 30px;
+    }
+
+    .dropdown-menu {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    input.form-control {
+        border-color: #e2e8f0;
+        height: 30px;
+        
+        &:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+    }
+
+    button.btn-primary {
+        background-color: #2563eb;
+        border-color: #2563eb;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background-color: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+    }
+}
